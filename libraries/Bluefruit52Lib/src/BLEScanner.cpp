@@ -39,7 +39,7 @@
 BLEScanner::BLEScanner(void)
 {
   _report_data.p_data  = _scan_data;
-  _report_data.len     = BLE_GAP_SCAN_BUFFER_MAX;
+  _report_data.len     = BLE_GAP_SCAN_BUFFER_EXTENDED_MIN;
 
   _conn_mask            = 0;
   _runnning            = false;
@@ -115,8 +115,8 @@ ble_gap_scan_params_t* BLEScanner::getParams(void)
 bool BLEScanner::start(uint16_t timeout)
 {
   _report_data.p_data  = _scan_data;
-  _report_data.len     = BLE_GAP_SCAN_BUFFER_MAX;
-
+  // _report_data.len     = BLE_GAP_SCAN_BUFFER_MAX;
+  _report_data.len     = BLE_GAP_SCAN_BUFFER_EXTENDED_MIN;
   _param.timeout = timeout;
 
   VERIFY_STATUS( sd_ble_gap_scan_start(&_param, &_report_data), false );
@@ -144,7 +144,24 @@ bool BLEScanner::stop(void)
   return true;
 }
 
-/*------------------------------------------------------------------*/
+bool BLEScanner::setLongRange(bool enable)
+{
+  bool isRunning = _runnning;
+
+  if (isRunning)
+  {
+    stop();
+  }
+
+  _param.extended = (enable ? 1 : 0);
+  _param.active = (enable ? 1 : 0);
+  _param.scan_phys = (enable ? BLE_GAP_PHY_CODED : BLE_GAP_PHY_AUTO);
+
+  if (isRunning)
+  {
+    start();
+  }
+}/*------------------------------------------------------------------*/
 /* Paser helper
  *------------------------------------------------------------------*/
 
