@@ -164,7 +164,7 @@ class AdafruitBluefruit
     bool     connected         (uint16_t conn_hdl);
 
     uint16_t connHandle        (void);
-
+    bool     setLongRange      (bool enable);
     // Alias to BLEConnection API()
     bool     disconnect        (uint16_t conn_hdl);
 
