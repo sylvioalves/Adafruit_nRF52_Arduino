@@ -251,7 +251,8 @@ void BLEAdvertisingData::clearData(void)
 BLEAdvertising::BLEAdvertising(void)
 {
   _hdl                 = BLE_GAP_ADV_SET_HANDLE_NOT_SET;
-  _type                = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+//   _type                = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+  _type                = BLE_GAP_ADV_TYPE_EXTENDED_CONNECTABLE_NONSCANNABLE_UNDIRECTED;
   _start_if_disconnect = true;
   _runnning            = false;
 
@@ -335,8 +336,49 @@ void BLEAdvertising::restartOnDisconnect(bool enable)
   _start_if_disconnect = enable;
 }
 
+bool BLEAdvertising::_startLongRange(uint16_t interval, uint16_t timeout)
+{
+  _type = BLE_GAP_ADV_TYPE_EXTENDED_CONNECTABLE_NONSCANNABLE_UNDIRECTED;
+// ADV Params
+  ble_gap_adv_params_t adv_para =
+  {
+    .properties    = { .type = _type, .anonymous  = 0 },
+    .p_peer_addr   = NULL                     , // Undirected advertisement
+    .interval      = interval                 , // advertising interval (in units of 0.625 ms)
+    .duration      = (uint16_t) (timeout*100) , // in 10-ms unit
+
+    .max_adv_evts  = 0                        , // TODO can be used for fast/slow mode
+    .channel_mask  = { 0, 0, 0, 0, 0 }        , // 40 channel, set 1 to disable
+    .filter_policy = BLE_GAP_ADV_FP_ANY       ,
+
+    .primary_phy   = BLE_GAP_PHY_CODED         , // 1 Mbps will be used
+    .secondary_phy = BLE_GAP_PHY_CODED         , // 1 Mbps will be used
+    // .set_id, .scan_req_notification
+  };
+
+  // gap_adv long-live is required by SD v6
+  static ble_gap_adv_data_t gap_adv =
+  {
+      .adv_data      = { .p_data = _data, .len = _count },
+      .scan_rsp_data = { .p_data = Bluefruit.ScanResponse.getData(), .len = Bluefruit.ScanResponse.count() }
+  };
+  VERIFY_STATUS( sd_ble_gap_adv_set_configure(&_hdl, &gap_adv, &adv_para), false );
+  VERIFY_STATUS( sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_ADV, _hdl, Bluefruit.getTxPower() ), false );
+  VERIFY_STATUS( sd_ble_gap_adv_start(_hdl, CONN_CFG_PERIPHERAL), false );
+
+//   Bluefruit._startConnLed(); // start blinking
+  _runnning        = true;
+  _active_interval = interval;
+
+  _left_timeout -= min16(_left_timeout, timeout);
+
+  return true;
+}
+
 bool BLEAdvertising::_start(uint16_t interval, uint16_t timeout)
 {
+  _type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+
   // ADV Params
   ble_gap_adv_params_t adv_para =
   {
@@ -364,11 +406,21 @@ bool BLEAdvertising::_start(uint16_t interval, uint16_t timeout)
   VERIFY_STATUS( sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_ADV, _hdl, Bluefruit.getTxPower() ), false );
   VERIFY_STATUS( sd_ble_gap_adv_start(_hdl, CONN_CFG_PERIPHERAL), false );
 
-  Bluefruit._startConnLed(); // start blinking
+//   Bluefruit._startConnLed(); // start blinking
   _runnning        = true;
   _active_interval = interval;
 
   _left_timeout -= min16(_left_timeout, timeout);
+
+  return true;
+}
+
+bool BLEAdvertising::startLongRange(uint16_t timeout)
+{
+  _stop_timeout = _left_timeout = timeout;
+
+  // Initially advertising in fast mode
+  VERIFY( _startLongRange(_fast_interval, _fast_timeout) );
 
   return true;
 }
@@ -379,7 +431,7 @@ bool BLEAdvertising::start(uint16_t timeout)
 
   // Initially advertising in fast mode
   // Fast mode blink 2x than slow mode
-  Bluefruit.setConnLedInterval(CFG_ADV_BLINKY_INTERVAL/2);
+//   Bluefruit.setConnLedInterval(CFG_ADV_BLINKY_INTERVAL/2);
   VERIFY( _start(_fast_interval, _fast_timeout) );
 
   return true;
@@ -390,7 +442,7 @@ bool BLEAdvertising::stop(void)
   VERIFY_STATUS( sd_ble_gap_adv_stop(_hdl), false);
 
   _runnning = false;
-  Bluefruit._stopConnLed(); // stop blinking
+//   Bluefruit._stopConnLed(); // stop blinking
 
   return true;
 }
@@ -422,7 +474,7 @@ void BLEAdvertising::_eventHandler(ble_evt_t* evt)
         bitClear(_conn_mask, conn_hdl);
 
         // Auto start if enabled and not connected to any central
-        if ( !_runnning && _start_if_disconnect ) start(_stop_timeout);
+        if ( !_runnning && _start_if_disconnect ) startLongRange(_stop_timeout);
       }
     break;
 
@@ -432,7 +484,7 @@ void BLEAdvertising::_eventHandler(ble_evt_t* evt)
         _runnning = false;
 
         // If still advertising, it is only in slow mode --> blink normal
-        Bluefruit.setConnLedInterval(CFG_ADV_BLINKY_INTERVAL);
+        // Bluefruit.setConnLedInterval(CFG_ADV_BLINKY_INTERVAL);
 
         if ( _stop_timeout == 0 )
         {
@@ -453,7 +505,7 @@ void BLEAdvertising::_eventHandler(ble_evt_t* evt)
           }else
           {
             // Stop advertising
-            Bluefruit._stopConnLed(); // stop blinking
+            // Bluefruit._stopConnLed(); // stop blinking
 
             // invoke stop callback
             if (_stop_cb) ada_callback(NULL, 0, _stop_cb);

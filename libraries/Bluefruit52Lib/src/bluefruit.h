@@ -166,7 +166,8 @@ class AdafruitBluefruit
      *------------------------------------------------------------------*/
     uint8_t  connected         (void); // Number of connected
     bool     connected         (uint16_t conn_hdl);
-
+    bool     setLongRange      (bool enable);
+    
     uint16_t connHandle        (void);
     bool     connPaired        (uint16_t conn_hdl);
 
