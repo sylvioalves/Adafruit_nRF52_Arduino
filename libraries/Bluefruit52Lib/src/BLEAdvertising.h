@@ -138,6 +138,7 @@ public:
 
   void restartOnDisconnect(bool enable);
   bool start(uint16_t timeout = 0);
+  bool startLongRange(uint16_t timeout = 0);
   bool stop (void);
 
   /*------------------------------------------------------------------*/
@@ -168,6 +169,7 @@ private:
 
   // Internal function
   bool _start(uint16_t interval, uint16_t timeout);
+  bool _startLongRange(uint16_t interval, uint16_t timeout);
 
 };
 

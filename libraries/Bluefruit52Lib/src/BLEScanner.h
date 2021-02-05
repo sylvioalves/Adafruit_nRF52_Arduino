@@ -76,6 +76,7 @@ public:
   bool start(uint16_t timeout = 0);
   bool resume(void);
   bool stop(void);
+  bool setLongRange(bool enable);
 
   /*------------- Callbacks -------------*/
   void setRxCallback(rx_callback_t fp);

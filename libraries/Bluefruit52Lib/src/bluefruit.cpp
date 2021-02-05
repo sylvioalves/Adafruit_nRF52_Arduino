@@ -99,7 +99,7 @@ void adafruit_soc_task(void* arg);
 static void bluefruit_blinky_cb( TimerHandle_t xTimer )
 {
   (void) xTimer;
-  digitalToggle(LED_BLUE);
+//   digitalToggle(LED_BLUE);
 }
 
 static void nrf_error_cb(uint32_t id, uint32_t pc, uint32_t info)
@@ -151,7 +151,7 @@ AdafruitBluefruit::AdafruitBluefruit(void)
   _sd_cfg.prph.wrcmd_qsize = BLE_GATTC_WRITE_CMD_TX_QUEUE_SIZE_DEFAULT;
 
   _sd_cfg.central.mtu_max     = BLE_GATT_ATT_MTU_DEFAULT;
-  _sd_cfg.central.event_len   = BLE_GAP_EVENT_LENGTH_DEFAULT;
+  _sd_cfg.central.event_len   = BLE_GAP_EVENT_LENGTH_DEFAULT * 5;
   _sd_cfg.central.hvn_qsize   = BLE_GATTS_HVN_TX_QUEUE_SIZE_DEFAULT;
   _sd_cfg.central.wrcmd_qsize = BLE_GATTC_WRITE_CMD_TX_QUEUE_SIZE_DEFAULT;
 
@@ -480,7 +480,7 @@ bool AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
   NVIC_EnableIRQ(SD_EVT_IRQn); // enable SD interrupt
 
   // Create Timer for led advertising blinky
-  _led_blink_th = xTimerCreate(NULL, ms2tick(CFG_ADV_BLINKY_INTERVAL/2), true, NULL, bluefruit_blinky_cb);
+//   _led_blink_th = xTimerCreate(NULL, ms2tick(CFG_ADV_BLINKY_INTERVAL/2), true, NULL, bluefruit_blinky_cb);
 
   // Initialize bonding
   bond_init();
@@ -561,16 +561,16 @@ int8_t AdafruitBluefruit::getTxPower(void)
 
 void AdafruitBluefruit::autoConnLed(bool enabled)
 {
-  _led_conn = enabled;
+//   _led_conn = enabled;
 }
 
 void AdafruitBluefruit::setConnLedInterval(uint32_t ms)
 {
-  BaseType_t active = xTimerIsTimerActive(_led_blink_th);
-  xTimerChangePeriod(_led_blink_th, ms2tick(ms), 0);
+//   BaseType_t active = xTimerIsTimerActive(_led_blink_th);
+//   xTimerChangePeriod(_led_blink_th, ms2tick(ms), 0);
 
-  // Change period of inactive timer will also start it !!
-  if ( !active ) xTimerStop(_led_blink_th, 0);
+//   // Change period of inactive timer will also start it !!
+//   if ( !active ) xTimerStop(_led_blink_th, 0);
 }
 
 bool AdafruitBluefruit::setAppearance(uint16_t appear)
@@ -786,8 +786,8 @@ void AdafruitBluefruit::_ble_handler(ble_evt_t* evt)
     case BLE_GAP_EVT_CONNECTED:
     {
       // Turn on Conn LED
-      _stopConnLed();
-      _setConnLed(true);
+    //   _stopConnLed();
+    //   _setConnLed(true);
 
       ble_gap_evt_connected_t const * para = &evt->evt.gap_evt.params.connected;
 
@@ -826,7 +826,7 @@ void AdafruitBluefruit::_ble_handler(ble_evt_t* evt)
       LOG_LV2("GAP", "Disconnect Reason: %s", dbg_hci_str(evt->evt.gap_evt.params.disconnected.reason));
 
       // Turn off Conn LED If not connected at all
-      if ( !this->connected() ) _setConnLed(false);
+    //   if ( !this->connected() ) _setConnLed(false);
 
       // Invoke disconnect callback
       if ( conn->getRole() == BLE_GAP_ROLE_PERIPH )
@@ -924,22 +924,22 @@ void AdafruitBluefruit::_ble_handler(ble_evt_t* evt)
  *------------------------------------------------------------------*/
 void AdafruitBluefruit::_startConnLed(void)
 {
-  if (_led_conn) xTimerStart(_led_blink_th, 0);
+//   if (_led_conn) xTimerStart(_led_blink_th, 0);
 }
 
 void AdafruitBluefruit::_stopConnLed(void)
 {
-  xTimerStop(_led_blink_th, 0);
+//   xTimerStop(_led_blink_th, 0);
 
-  _setConnLed( this->connected() );
+//   _setConnLed( this->connected() );
 }
 
 void AdafruitBluefruit::_setConnLed (bool on_off)
 {
-  if (_led_conn)
-  {
-    digitalWrite(LED_BLUE, on_off ? LED_STATE_ON : (1-LED_STATE_ON) );
-  }
+//   if (_led_conn)
+//   {
+//     digitalWrite(LED_BLUE, on_off ? LED_STATE_ON : (1-LED_STATE_ON) );
+//   }
 }
 
 /*------------------------------------------------------------------*/
